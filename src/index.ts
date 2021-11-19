@@ -28,6 +28,7 @@ async function main(): Promise<void> {
 
     const { name, version } = asPackageJson(readFileSync(file, 'utf8'))
     const time = await timesCache.getTime(name, version)
+    if (time == null) continue
     if (out[name] == null || out[name].valueOf() < time.valueOf()) {
       out[name] = time
     }

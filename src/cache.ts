@@ -9,6 +9,7 @@ const asTimesCache = asJSON(asObject(asTimes))
 const wasTimesCache = uncleaner(asTimesCache)
 
 export class TimesCache {
+  dirty: number = 0
   path: string
   cache: ReturnType<typeof asTimesCache> = {}
 
@@ -19,25 +20,31 @@ export class TimesCache {
     } catch {}
   }
 
-  async getTime(name: string, version: string): Promise<Date> {
+  async getTime(name: string, version: string): Promise<Date | undefined> {
     if (this.cache[name] != null) {
       const times = this.cache[name]
       if (times[version] != null) return times[version]
     }
 
     console.log('fetching ', name)
-    const response = await fetch(
-      `https://registry.npmjs.com/${encodeURIComponent(name)}`,
-      { headers: { accept: 'application/json' } }
-    )
+    const url = `https://registry.npmjs.com/${encodeURIComponent(name)}`
+    const response = await fetch(url, {
+      headers: { accept: 'application/json' }
+    })
+    if (response.status === 404) return undefined
+    if (!response.ok) {
+      throw new Error(`GET ${url} returned ${response.status}`)
+    }
     const times = asPackageCouch(await response.json()).time
     this.cache[name] = times
-    this.save()
+    ++this.dirty
+    if (this.dirty > 10) this.save()
     return times[version]
   }
 
   save(): void {
     writeFileSync(this.path, wasTimesCache(this.cache))
+    this.dirty = 0
   }
 }
 
