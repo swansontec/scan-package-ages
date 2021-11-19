@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "module": "es2015",
+    "moduleResolution": "node",
+    "outDir": "bin",
+    "strict": true,
+    "target": "es2017"
+  },
+  "exclude": ["node_modules", "bin"]
+}
